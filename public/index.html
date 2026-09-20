@@ -4,18 +4,103 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EdgeOne Makers Text2KV Admin</title>
+<script>
+// Blocker: apply theme BEFORE first paint to avoid flash.
+// Edge (Chromium) and Safari 13+ both support matchMedia('(prefers-color-scheme: dark)').
+(function(){
+    try {
+        var stored = localStorage.getItem('text2kv_theme');
+        var mode = stored;
+        if (mode !== 'light' && mode !== 'dark') {
+            mode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', mode);
+    } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
+</script>
 <style>
 * { box-sizing: border-box; }
+
+/* ===== Light theme (default) ===== */
+:root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --hover: #f3f4f6;
+    --header-bg: linear-gradient(135deg, #0052d9, #003ebb);
+    --header-text: #ffffff;
+    --header-btn-bg: rgba(255,255,255,0.2);
+    --header-btn-border: rgba(255,255,255,0.3);
+    --header-btn-text: #ffffff;
+    --primary-bg: #60a5fa;
+    --primary-text: #0f172a;
+    --primary-hover-bg: #4f93f7;
+    --secondary-bg: #ffffff;
+    --secondary-text: #1f2937;
+    --secondary-hover-bg: #f3f4f6;
+    --danger-bg: #dc2626;
+    --danger-text: #ffffff;
+    --danger-hover-bg: #b91c1c;
+    --badge-locked-bg: #fef3c7;
+    --badge-locked-text: #7c2d12;
+    --badge-public-bg: #dcfce7;
+    --badge-public-text: #166534;
+    --toast-bg: #ffffff;
+    --toast-text: #1f2937;
+    --toast-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    --modal-shadow: 0 10px 40px rgba(0,0,0,0.25);
+}
+
+/* ===== Dark theme ===== */
+:root[data-theme="dark"] {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --text: #f3f4f6;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border: #374151;
+    --border-strong: #4b5563;
+    --hover: #334155;
+    --header-bg: linear-gradient(135deg, #60a5fa, #4f93f7);
+    --header-text: #0f172a;
+    --header-btn-bg: rgba(0,0,0,0.15);
+    --header-btn-border: rgba(0,0,0,0.25);
+    --header-btn-text: #0f172a;
+    --primary-bg: #60a5fa;
+    --primary-text: #0f172a;
+    --primary-hover-bg: #4f93f7;
+    --secondary-bg: #334155;
+    --secondary-text: #f3f4f6;
+    --secondary-hover-bg: #475569;
+    --danger-bg: #ef4444;
+    --danger-text: #0f172a;
+    --danger-hover-bg: #dc2626;
+    --badge-locked-bg: #fbbf24;
+    --badge-locked-text: #7c2d12;
+    --badge-public-bg: #86efac;
+    --badge-public-text: #14532d;
+    --toast-bg: #1e293b;
+    --toast-text: #f3f4f6;
+    --toast-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    --modal-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
 body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     margin: 0; padding: 0;
-    background: #f6f7f9;
-    color: #1f2937;
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.5;
 }
 header {
-    background: linear-gradient(135deg, #0052d9, #003ebb);
-    color: white;
+    background: var(--header-bg);
+    color: var(--header-text);
     padding: 16px 24px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
@@ -24,47 +109,65 @@ header {
     margin: 0 auto;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 .header-title { font-size: 18px; font-weight: 600; margin: 0; }
 .header-subtitle { font-size: 13px; opacity: 0.8; margin-left: 8px; }
 .header-spacer { flex: 1; }
 .header-status { font-size: 13px; opacity: 0.9; }
-.header-btn {
-    padding: 6px 14px;
-    background: rgba(255,255,255,0.2);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.3);
+
+.btn-header {
+    padding: 5px 12px;
+    background: var(--header-btn-bg);
+    color: var(--header-btn-text);
+    border: 1px solid var(--header-btn-border);
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
+    transition: background 0.15s;
 }
-.header-btn:hover { background: rgba(255,255,255,0.3); }
+.btn-header:hover { background: rgba(255,255,255,0.35); }
+:root[data-theme="dark"] .btn-header:hover { background: rgba(0,0,0,0.25); }
+
+#theme-btn {
+    padding: 5px 10px;
+    background: #ffffff;
+    color: #0052d9;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+}
+#theme-btn:hover { background: #f0f0f0; }
+
 main {
     max-width: 1000px;
     margin: 24px auto;
     padding: 0 24px;
 }
 .card {
-    background: white;
+    background: var(--surface);
     padding: 24px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     margin-bottom: 20px;
 }
-.login-card {
-    max-width: 480px;
-    margin: 60px auto;
+:root[data-theme="dark"] .card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
+.login-card { max-width: 480px; margin: 60px auto; }
 .login-card h2 { margin-top: 0; }
-.login-card p { color: #4b5563; }
+.login-card p { color: var(--text-secondary); }
 .login-card code {
-    background: #f3f4f6;
+    background: var(--hover);
     padding: 2px 6px;
     border-radius: 3px;
     font-size: 13px;
+    color: var(--text);
 }
+
 .toolbar {
     display: flex;
     gap: 12px;
@@ -76,75 +179,72 @@ main {
     flex: 1;
     min-width: 200px;
     padding: 8px 12px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
 }
+.toolbar input[type="search"]::placeholder { color: var(--text-muted); }
 .toolbar .stats {
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 14px;
     white-space: nowrap;
 }
+
 button.btn {
     padding: 8px 14px;
     border-radius: 4px;
-    border: 1px solid #e5e7eb;
-    background: white;
-    color: #1f2937;
+    border: 1px solid var(--border);
+    background: var(--secondary-bg);
+    color: var(--secondary-text);
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.15s;
+    transition: background 0.15s;
 }
-button.btn:hover { background: #f3f4f6; }
+button.btn:hover { background: var(--secondary-hover-bg); }
 button.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 button.btn-primary {
-    background: #0052d9;
-    color: white;
-    border-color: #0052d9;
+    background: var(--primary-bg);
+    color: var(--primary-text);
+    border-color: var(--primary-bg);
+    font-weight: 500;
 }
-button.btn-primary:hover { background: #003ebb; }
+button.btn-primary:hover { background: var(--primary-hover-bg); border-color: var(--primary-hover-bg); }
 button.btn-danger {
-    background: #dc2626;
-    color: white;
-    border-color: #dc2626;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-bg);
 }
-button.btn-danger:hover { background: #b91c1c; }
-button.btn-sm {
-    padding: 4px 10px;
-    font-size: 13px;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
+button.btn-danger:hover { background: var(--danger-hover-bg); border-color: var(--danger-hover-bg); }
+button.btn-sm { padding: 4px 10px; font-size: 13px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
 thead th {
     text-align: left;
     padding: 10px 12px;
-    background: #f9fafb;
-    border-bottom: 2px solid #e5e7eb;
+    background: var(--hover);
+    border-bottom: 2px solid var(--border);
     font-weight: 600;
-    color: #374151;
+    color: var(--text-secondary);
     font-size: 13px;
 }
 tbody td {
     padding: 12px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
-tbody tr:hover { background: #f9fafb; }
+tbody tr:hover { background: var(--hover); }
 td.key {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 13px;
     word-break: break-all;
-    color: #1f2937;
+    color: var(--text);
     font-weight: 500;
 }
-td.actions {
-    text-align: right;
-    white-space: nowrap;
-}
+td.actions { text-align: right; white-space: nowrap; }
 td.actions .btn-sm { margin-left: 6px; }
+
 .badge {
     display: inline-block;
     padding: 2px 10px;
@@ -152,19 +252,17 @@ td.actions .btn-sm { margin-left: 6px; }
     font-size: 12px;
     font-weight: 500;
 }
-.badge-locked { background: #fef3c7; color: #92400e; }
-.badge-public { background: #dcfce7; color: #166534; }
-.empty {
-    text-align: center;
-    padding: 48px 20px;
-    color: #6b7280;
-}
-.empty h3 { color: #374151; margin: 0 0 8px 0; }
+.badge-locked { background: var(--badge-locked-bg); color: var(--badge-locked-text); }
+.badge-public { background: var(--badge-public-bg); color: var(--badge-public-text); }
+
+.empty { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+.empty h3 { color: var(--text-secondary); margin: 0 0 8px 0; }
 .empty p { margin: 0; }
+
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.45);
+    background: rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -173,9 +271,9 @@ td.actions .btn-sm { margin-left: 6px; }
 }
 .modal-backdrop[hidden] { display: none; }
 .modal {
-    background: white;
+    background: var(--surface);
     border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    box-shadow: var(--modal-shadow);
     width: 100%;
     max-width: 640px;
     max-height: 90vh;
@@ -184,43 +282,47 @@ td.actions .btn-sm { margin-left: 6px; }
 }
 .modal-header {
     padding: 16px 20px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
 }
 .modal-header h3 { margin: 0; font-size: 16px; }
 .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 .modal-footer {
     padding: 14px 20px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;
     gap: 8px;
 }
+
 .field { margin-bottom: 16px; }
 .field:last-child { margin-bottom: 0; }
 .field label {
     display: block;
     margin-bottom: 6px;
     font-weight: 500;
-    color: #374151;
+    color: var(--text-secondary);
     font-size: 14px;
 }
 .field .hint {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-top: 4px;
 }
 .field input, .field textarea {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-strong);
     border-radius: 4px;
     font-family: inherit;
     font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
 }
+.field input::placeholder, .field textarea::placeholder { color: var(--text-muted); }
 .field input:focus, .field textarea:focus {
     outline: none;
-    border-color: #0052d9;
-    box-shadow: 0 0 0 3px rgba(0,82,217,0.15);
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 .field textarea {
     min-height: 220px;
@@ -229,8 +331,8 @@ td.actions .btn-sm { margin-left: 6px; }
     line-height: 1.5;
 }
 .field input[disabled] {
-    background: #f3f4f6;
-    color: #6b7280;
+    background: var(--hover);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 .checkbox-row {
@@ -238,10 +340,11 @@ td.actions .btn-sm { margin-left: 6px; }
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #4b5563;
+    color: var(--text-secondary);
     margin-top: 8px;
 }
 .checkbox-row input { width: auto; margin: 0; }
+
 #toasts {
     position: fixed;
     top: 20px;
@@ -253,23 +356,25 @@ td.actions .btn-sm { margin-left: 6px; }
     pointer-events: none;
 }
 .toast {
-    background: white;
+    background: var(--toast-bg);
+    color: var(--toast-text);
     padding: 12px 16px;
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    border-left: 4px solid #0052d9;
+    box-shadow: var(--toast-shadow);
+    border-left: 4px solid #60a5fa;
     min-width: 240px;
     max-width: 380px;
     font-size: 14px;
     animation: slide-in 0.2s ease-out;
     pointer-events: auto;
 }
-.toast.success { border-left-color: #16a34a; }
-.toast.error { border-left-color: #dc2626; }
+.toast.success { border-left-color: #22c55e; }
+.toast.error { border-left-color: #ef4444; }
 @keyframes slide-in {
     from { transform: translateX(20px); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+
 [hidden] { display: none !important; }
 @media (max-width: 640px) {
     main { padding: 0 12px; }
@@ -285,7 +390,8 @@ td.actions .btn-sm { margin-left: 6px; }
         <span class="header-subtitle">Admin Console</span>
         <div class="header-spacer"></div>
         <span id="status" class="header-status">未登录</span>
-        <button id="logout-btn" class="header-btn" onclick="logout()" hidden>退出</button>
+        <button id="theme-btn" class="btn-header" onclick="toggleTheme()" title="切换浅色/深色主题">🌙 深色</button>
+        <button id="logout-btn" class="btn-header" onclick="logout()" hidden>退出</button>
     </div>
 </header>
 
@@ -344,11 +450,11 @@ td.actions .btn-sm { margin-left: 6px; }
                 <div class="hint">仅允许字母、数字、_ - . : / ，最长 200 字符；不允许以 _meta: 开头。</div>
             </div>
             <div class="field">
-                <label for="edit-content">Content <span id="content-size" style="font-weight:normal;color:#6b7280;font-size:13px;"></span></label>
+                <label for="edit-content">Content <span id="content-size" style="font-weight:normal;color:var(--text-muted);font-size:13px;"></span></label>
                 <textarea id="edit-content" placeholder="输入文本内容..."></textarea>
             </div>
             <div class="field">
-                <label for="edit-token">Read Token <span style="font-weight:normal;color:#6b7280;">(可选)</span></label>
+                <label for="edit-token">Read Token <span style="font-weight:normal;color:var(--text-muted);">(可选)</span></label>
                 <input type="text" id="edit-token" placeholder="留空则公开可读" autocomplete="off">
                 <div class="hint">设置后，读取此 key 需要提供匹配的 readToken。</div>
             </div>
@@ -367,7 +473,7 @@ td.actions .btn-sm { margin-left: 6px; }
         </div>
         <div class="modal-body">
             <p>确定要删除以下 key 吗？此操作不可撤销：</p>
-            <pre id="delete-key" style="background:#f3f4f6;padding:10px;border-radius:4px;font-family:ui-monospace,monospace;font-size:13px;word-break:break-all;margin:8px 0;"></pre>
+            <pre id="delete-key" style="background:var(--hover);padding:10px;border-radius:4px;font-family:ui-monospace,monospace;font-size:13px;word-break:break-all;margin:8px 0;color:var(--text);"></pre>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeDelete()">取消</button>
@@ -379,6 +485,47 @@ td.actions .btn-sm { margin-left: 6px; }
 <div id="toasts"></div>
 
 <script>
+// ============ Theme ============
+const THEME_KEY = 'text2kv_theme';
+function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'light';
+}
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+        if (t === 'dark') {
+            btn.innerHTML = '☀️ 浅色';
+            btn.title = '切换到浅色主题';
+        } else {
+            btn.innerHTML = '🌙 深色';
+            btn.title = '切换到深色主题';
+        }
+    }
+}
+function toggleTheme() {
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+}
+// Sync button label with the theme set by the head script
+(function() {
+    const stored = (function() {
+        try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+    })();
+    if (stored !== 'light' && stored !== 'dark') {
+        // follow system, no localStorage entry
+        try {
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            if (mq.addEventListener) mq.addEventListener('change', (e) => {
+                const s = (function(){ try { return localStorage.getItem(THEME_KEY); } catch(_){ return null; } })();
+                if (s !== 'light' && s !== 'dark') applyTheme(e.matches ? 'dark' : 'light');
+            });
+        } catch (e) {}
+    }
+    applyTheme(currentTheme());
+})();
+
 // ============ State ============
 const STORAGE_KEY = 'text2kv_admin_token';
 const KEY_REGEX = /^[\w.\-:/]{1,200}$/;
@@ -398,10 +545,10 @@ function toast(msg, type = 'info') {
     el.className = 'toast ' + type;
     el.textContent = msg;
     $('toasts').appendChild(el);
-    setTimeout(() => {
+    setTimeout(function() {
         el.style.transition = 'opacity 0.3s';
         el.style.opacity = '0';
-        setTimeout(() => el.remove(), 300);
+        setTimeout(function() { el.remove(); }, 300);
     }, 3000);
 }
 
@@ -410,20 +557,15 @@ async function api(method, path, body) {
     if (!state.token) throw new Error('未登录');
     const opts = {
         method: method,
-        headers: {
-            'Authorization': 'Bearer ' + state.token,
-        },
+        headers: { 'Authorization': 'Bearer ' + state.token },
     };
     if (body) {
         opts.headers['Content-Type'] = 'application/json';
         opts.body = JSON.stringify(body);
     }
     let res;
-    try {
-        res = await fetch(path, opts);
-    } catch (e) {
-        throw new Error('网络错误，请检查连接');
-    }
+    try { res = await fetch(path, opts); }
+    catch (e) { throw new Error('网络错误，请检查连接'); }
     let data = {};
     try { data = await res.json(); } catch (e) {}
     if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
@@ -524,7 +666,7 @@ function renderList() {
     $('list-container').hidden = false;
     $('empty').hidden = true;
     if (filtered.length === 0) {
-        $('list-body').innerHTML = '<tr><td colspan="3" style="text-align:center;color:#6b7280;padding:24px;">没有匹配的 Key</td></tr>';
+        $('list-body').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px;">没有匹配的 Key</td></tr>';
         return;
     }
     $('list-body').innerHTML = filtered.map(function(k) {
@@ -658,9 +800,7 @@ async function copyKey(key) {
             document.execCommand('copy');
             ta.remove();
             toast('已复制', 'success');
-        } catch (e2) {
-            toast('复制失败', 'error');
-        }
+        } catch (e2) { toast('复制失败', 'error'); }
     }
 }
 
@@ -672,7 +812,6 @@ function updateContentSize() {
 
 // ============ Event delegation ============
 function initEvents() {
-    // List row actions
     $('list-body').addEventListener('click', function(e) {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
@@ -684,7 +823,6 @@ function initEvents() {
         else if (action === 'edit') openEdit(key);
         else if (action === 'delete') openDelete(key);
     });
-    // Close modal on backdrop click
     ['edit-modal', 'delete-modal'].forEach(function(id) {
         $(id).addEventListener('click', function(e) {
             if (e.target === $(id)) {
@@ -694,7 +832,6 @@ function initEvents() {
             }
         });
     });
-    // ESC closes modals
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             $('edit-modal').hidden = true;
@@ -703,11 +840,9 @@ function initEvents() {
             state.deleting = null;
         }
     });
-    // Enter in login token triggers login
     $('login-token').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') login();
     });
-    // Content size indicator
     $('edit-content').addEventListener('input', updateContentSize);
 }
 
