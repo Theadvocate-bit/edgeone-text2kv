@@ -677,7 +677,7 @@ function renderList() {
             '<td class="key">' + escapeHtml(k.key) + '</td>' +
             '<td>' + tokenBadge + '</td>' +
             '<td class="actions">' +
-                '<button class="btn btn-sm" data-action="copy">复制</button>' +
+                '<button class="btn btn-sm" data-action="copy" title="复制访问链接">链接</button>' +
                 '<button class="btn btn-sm btn-primary" data-action="edit">编辑</button>' +
                 '<button class="btn btn-sm btn-danger" data-action="delete">删除</button>' +
             '</td>' +
@@ -786,20 +786,26 @@ async function confirmDelete() {
 
 // ============ Copy ============
 async function copyKey(key) {
+    // Build the read URL: /api/get?key=<key>[&readToken=<readToken>]
+    var url = window.location.origin + '/api/get?key=' + encodeURIComponent(key);
+    var found = state.keys.find(function(k) { return k.key === key; });
+    if (found && found.readToken) {
+        url += '&readToken=' + encodeURIComponent(found.readToken);
+    }
     try {
-        await navigator.clipboard.writeText(key);
-        toast('已复制到剪贴板', 'success');
+        await navigator.clipboard.writeText(url);
+        toast('访问链接已复制', 'success');
     } catch (e) {
         try {
-            const ta = document.createElement('textarea');
-            ta.value = key;
+            var ta = document.createElement('textarea');
+            ta.value = url;
             ta.style.position = 'fixed';
             ta.style.opacity = '0';
             document.body.appendChild(ta);
             ta.select();
             document.execCommand('copy');
             ta.remove();
-            toast('已复制', 'success');
+            toast('访问链接已复制', 'success');
         } catch (e2) { toast('复制失败', 'error'); }
     }
 }
