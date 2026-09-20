@@ -1,0 +1,73 @@
+// EdgeOne Makers Edge Function — GET /api/get?key=xxx&readToken=yyy
+// 公开读取接口：无需 admin token，通过 readToken 鉴权
+// 自包含：Edge Functions 目录内所有 .js 文件均视为路由，无法引入共享模块
+
+// ====== Helpers ======
+const env = (e) => ({
+  u: (e.UPSTASH_REDIS_REST_URL || '').trim(),
+  t: (e.UPSTASH_REDIS_REST_TOKEN || '').trim(),
+});
+
+const json = (d, s = 200) =>
+  new Response(JSON.stringify(d), {
+    status: s,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+
+async function pipe(url, token, cmds) {
+  const ep = `${url.replace(/\/$/, '')}/pipeline`;
+  const r = await fetch(ep, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(cmds),
+  });
+  if (!r.ok) throw new Error(`Upstash pipeline error [${r.status}]`);
+  return (await r.json()).map((i) => {
+    if (i.error) throw new Error(`Upstash command error: ${i.error}`);
+    return i.result;
+  });
+}
+
+// ====== Handler ======
+export async function onRequest(context) {
+  const { request, env: e } = context;
+  try {
+    if (request.method !== 'GET') return json({ error: 'Method Not Allowed' }, 405);
+
+    const { u, t } = env(e);
+    if (!u || !t) return json({ error: '服务端配置缺失：未配置 Upstash Redis 环境变量' }, 500);
+
+    const url = new URL(request.url);
+    const key = (url.searchParams.get('key') || '').trim();
+    if (!key || key.startsWith('_meta:')) return json({ error: 'Key 无效' }, 400);
+
+    const [content, meta] = await pipe(u, t, [
+      ['GET', key],
+      ['GET', `_meta:${key}`],
+    ]);
+
+    if (content === null || content === undefined) return json({ error: 'Key 不存在' }, 404);
+
+    let requiredToken = '';
+    if (meta) {
+      try { requiredToken = JSON.parse(meta).readToken || ''; } catch {}
+    }
+
+    if (requiredToken) {
+      const provided = (url.searchParams.get('readToken') || '').trim();
+      if (provided !== requiredToken) return json({ error: '需要有效的读取 Token' }, 403);
+    }
+
+    return json({ key, content }, 200);
+  } catch (err) {
+    console.error('Worker error:', err);
+    return json({ error: '服务器内部错误' }, 500);
+  }
+}
