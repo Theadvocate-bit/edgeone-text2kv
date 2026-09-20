@@ -566,8 +566,16 @@ async function api(method, path, body) {
     let res;
     try { res = await fetch(path, opts); }
     catch (e) { throw new Error('网络错误，请检查连接'); }
-    let data = {};
-    try { data = await res.json(); } catch (e) {}
+    // /api/get returns text/plain on success; JSON on error. All others return JSON.
+    var ct = res.headers.get('content-type') || '';
+    var data;
+    if (ct.indexOf('application/json') !== -1) {
+        try { data = await res.json(); } catch (e) { data = {}; }
+    } else {
+        var txt = await res.text();
+        var urlObj = new URL(path, window.location.origin);
+        data = { key: urlObj.searchParams.get('key') || '', content: txt };
+    }
     if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
     return data;
 }

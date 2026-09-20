@@ -18,6 +18,17 @@ const json = (d, s = 200) =>
     },
   });
 
+// Plain text response — for direct access links (/api/get?key=...)
+const text = (body, s = 200) =>
+  new Response(body, {
+    status: s,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+
 async function pipe(url, token, cmds) {
   const ep = `${url.replace(/\/$/, '')}/pipeline`;
   const r = await fetch(ep, {
@@ -65,7 +76,8 @@ export async function onRequest(context) {
       if (provided !== requiredToken) return json({ error: '需要有效的读取 Token' }, 403);
     }
 
-    return json({ key, content }, 200);
+    // Plain text response — access links show content directly in browser
+    return text(content, 200);
   } catch (err) {
     console.error('Worker error:', err);
     return json({ error: '服务器内部错误' }, 500);
