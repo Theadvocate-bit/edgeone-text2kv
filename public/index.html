@@ -3,348 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TEXT2KV 管理面板</title>
+    <title>EdgeOne Text2KV Admin</title>
     <style>
-        :root {
-            --bg-color: #f4f6f8;
-            --card-bg: #ffffff;
-            --primary-color: #0052d9;
-            --danger-color: #d93025;
-            --text-color: #1f2329;
-            --border-color: #e5e6eb;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            background-color: #fafafa;
-            font-weight: 600;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-
-        .btn-sm {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-
-        /* Modal 弹窗组件 */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background: #fff;
-            padding: 24px;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        textarea.form-control {
-            height: 120px;
-            resize: vertical;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #f9f9fb; color: #333; }
+        .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0052d9; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #003ebb; }
+        pre { background: #272822; color: #f8f8f2; padding: 12px; border-radius: 4px; overflow-x: auto; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <h2>TEXT2KV 管理面板</h2>
-        <div>
-            <button class="btn" onclick="openEditModal()">+ 新建/编辑文本</button>
-            <button class="btn btn-danger" onclick="logout()">退出鉴权</button>
-        </div>
+    <div class="card">
+        <h2>EdgeOne Text2KV 控制台</h2>
+        <label>Admin Token:</label>
+        <input type="password" id="token" placeholder="输入你在 EdgeOne 设置的 ADMIN_TOKEN">
+        <button onclick="loadList()">加载数据列表</button>
     </div>
 
     <div class="card">
-        <h3>文本列表与分享</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>文本 Key</th>
-                    <th>读取 Token</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="list-body">
-                <tr>
-                    <td colspan="3" style="text-align: center; color: #888;">正在加载...</td>
-                </tr>
-            </tbody>
-        </table>
+        <h3>数据控制台输出</h3>
+        <pre id="output">等待操作...</pre>
     </div>
-</div>
 
-<!-- 鉴权输入弹窗 -->
-<div id="auth-modal" class="modal-backdrop hidden">
-    <div class="modal">
-        <h3>请输入管理 Token</h3>
-        <p style="color: #666; font-size: 14px;">请输入在 EdgeOne 后台配置的 ADMIN_TOKEN</p>
-        <div class="form-group">
-            <input type="password" id="auth-token-input" class="form-control" placeholder="输入 Admin Token">
-        </div>
-        <button class="btn" style="width: 100%;" onclick="verifyAndSaveToken()">确认验证</button>
-    </div>
-</div>
+    <script>
+        async function loadList() {
+            const token = document.getElementById('token').value.trim();
+            const output = document.getElementById('output');
+            if (!token) return alert('请输入 Token！');
 
-<!-- 新建/编辑弹窗 -->
-<div id="edit-modal" class="modal-backdrop hidden">
-    <div class="modal">
-        <h3 id="modal-title">新建文本</h3>
-        <div class="form-group">
-            <label>文本 Key (名称)</label>
-            <input type="text" id="edit-key" class="form-control" placeholder="例如: config-json">
-        </div>
-        <div class="form-group">
-            <label>阅读 Token (可选)</label>
-            <input type="text" id="edit-read-token" class="form-control" placeholder="为空则允许公开读取">
-        </div>
-        <div class="form-group">
-            <label>内容文本</label>
-            <textarea id="edit-content" class="form-control" placeholder="请输入储存的内容..."></textarea>
-        </div>
-        <div style="text-align: right; gap: 8px; display: flex; justify-content: flex-end;">
-            <button class="btn" style="background-color: #888;" onclick="closeEditModal()">取消</button>
-            <button class="btn" onclick="saveKV()">保存数据</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // 页面初始化：优先自动读取列表验证 Token
-    document.addEventListener("DOMContentLoaded", () => {
-        const token = localStorage.getItem('admin_token');
-        if (!token) {
-            showAuthModal();
-        } else {
-            loadKVList();
-        }
-    });
-
-    function showAuthModal() {
-        document.getElementById('auth-modal').classList.remove('hidden');
-    }
-
-    function hideAuthModal() {
-        document.getElementById('auth-modal').classList.add('hidden');
-    }
-
-    // 验证并保存 Token
-    async function verifyAndSaveToken() {
-        const tokenInput = document.getElementById('auth-token-input').value.trim();
-        if (!tokenInput) {
-            alert('请输入 Token！');
-            return;
-        }
-
-        localStorage.setItem('admin_token', tokenInput);
-        hideAuthModal();
-        await loadKVList();
-    }
-
-    // 关键流程：拉取列表 & 严密鉴权校验
-    async function loadKVList() {
-        const token = localStorage.getItem('admin_token') || '';
-        const tbody = document.getElementById('list-body');
-
-        try {
-            const res = await fetch(`/api/list?token=${encodeURIComponent(token)}`);
-
-            // 严密判断：如果 HTTP 状态码不是 200 (如 403 / 500)，强行清除 Token 并拦截访问
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({ error: '未知的鉴权错误' }));
-                alert(`鉴权失败: ${errData.error || 'Token 无效'}`);
-                
-                localStorage.removeItem('admin_token');
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--danger-color);">鉴权失败，请重新登录。</td></tr>`;
-                showAuthModal();
-                return;
+            output.innerText = '正在请求...';
+            try {
+                const res = await fetch(`/api/list?token=${encodeURIComponent(token)}`);
+                const data = await res.json();
+                output.innerText = JSON.stringify(data, null, 2);
+            } catch (e) {
+                output.innerText = '请求失败: ' + e.message;
             }
-
-            const list = await res.json();
-            
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #888;">暂无保存的数据</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = list.map(item => `
-                <tr>
-                    <td><strong>${escapeHtml(item.key)}</strong></td>
-                    <td>${item.readToken ? `<code>${escapeHtml(item.readToken)}</code>` : '<span style="color:#aaa;">公开访问</span>'}</td>
-                    <td>
-                        <button class="btn btn-sm" onclick="deleteKV('${escapeHtml(item.key)}')">删除</button>
-                    </td>
-                </tr>
-            `).join('');
-
-        } catch (e) {
-            alert('网络连接错误，无法连接到 API。');
         }
-    }
-
-    // 打开编辑框
-    function openEditModal() {
-        document.getElementById('edit-key').value = '';
-        document.getElementById('edit-read-token').value = '';
-        document.getElementById('edit-content').value = '';
-        document.getElementById('edit-modal').classList.remove('hidden');
-    }
-
-    function closeEditModal() {
-        document.getElementById('edit-modal').classList.add('hidden');
-    }
-
-    // 保存 KV
-    async function saveKV() {
-        const token = localStorage.getItem('admin_token') || '';
-        const key = document.getElementById('edit-key').value.trim();
-        const readToken = document.getElementById('edit-read-token').value.trim();
-        const content = document.getElementById('edit-content').value;
-
-        if (!key) {
-            alert('请填写 Key！');
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/save?token=${encodeURIComponent(token)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key, readToken, content })
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                alert(`保存失败: ${errData.error || res.statusText}`);
-                return;
-            }
-
-            closeEditModal();
-            loadKVList();
-        } catch (e) {
-            alert('保存请求异常！');
-        }
-    }
-
-    // 删除 KV
-    async function deleteKV(key) {
-        if (!confirm(`确定要删除 ${key} 吗？`)) return;
-
-        const token = localStorage.getItem('admin_token') || '';
-
-        try {
-            const res = await fetch(`/api/delete?token=${encodeURIComponent(token)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key })
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                alert(`删除失败: ${errData.error || res.statusText}`);
-                return;
-            }
-
-            loadKVList();
-        } catch (e) {
-            alert('删除请求异常！');
-        }
-    }
-
-    // 退出鉴权
-    function logout() {
-        localStorage.removeItem('admin_token');
-        location.reload();
-    }
-
-    function escapeHtml(str) {
-        return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-</script>
+    </script>
 </body>
 </html>
