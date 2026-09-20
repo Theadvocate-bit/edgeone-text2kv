@@ -1,46 +1,721 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EdgeOne Makers Text2KV Admin</title>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #f9f9fb; color: #333; }
-        .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #0052d9; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #003ebb; }
-        pre { background: #272822; color: #f8f8f2; padding: 12px; border-radius: 4px; overflow-x: auto; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeOne Makers Text2KV Admin</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 0;
+    background: #f6f7f9;
+    color: #1f2937;
+    line-height: 1.5;
+}
+header {
+    background: linear-gradient(135deg, #0052d9, #003ebb);
+    color: white;
+    padding: 16px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.header-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.header-title { font-size: 18px; font-weight: 600; margin: 0; }
+.header-subtitle { font-size: 13px; opacity: 0.8; margin-left: 8px; }
+.header-spacer { flex: 1; }
+.header-status { font-size: 13px; opacity: 0.9; }
+.header-btn {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.header-btn:hover { background: rgba(255,255,255,0.3); }
+main {
+    max-width: 1000px;
+    margin: 24px auto;
+    padding: 0 24px;
+}
+.card {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+.login-card {
+    max-width: 480px;
+    margin: 60px auto;
+}
+.login-card h2 { margin-top: 0; }
+.login-card p { color: #4b5563; }
+.login-card code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+.toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.toolbar input[type="search"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.toolbar .stats {
+    color: #6b7280;
+    font-size: 14px;
+    white-space: nowrap;
+}
+button.btn {
+    padding: 8px 14px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #1f2937;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+}
+button.btn:hover { background: #f3f4f6; }
+button.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+button.btn-primary {
+    background: #0052d9;
+    color: white;
+    border-color: #0052d9;
+}
+button.btn-primary:hover { background: #003ebb; }
+button.btn-danger {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+button.btn-danger:hover { background: #b91c1c; }
+button.btn-sm {
+    padding: 4px 10px;
+    font-size: 13px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+thead th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #374151;
+    font-size: 13px;
+}
+tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+tbody tr:hover { background: #f9fafb; }
+td.key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    word-break: break-all;
+    color: #1f2937;
+    font-weight: 500;
+}
+td.actions {
+    text-align: right;
+    white-space: nowrap;
+}
+td.actions .btn-sm { margin-left: 6px; }
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.badge-locked { background: #fef3c7; color: #92400e; }
+.badge-public { background: #dcfce7; color: #166534; }
+.empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: #6b7280;
+}
+.empty h3 { color: #374151; margin: 0 0 8px 0; }
+.empty p { margin: 0; }
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+.modal-backdrop[hidden] { display: none; }
+.modal {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.modal-header h3 { margin: 0; font-size: 16px; }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.field { margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+.field .hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+.field input, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+}
+.field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: #0052d9;
+    box-shadow: 0 0 0 3px rgba(0,82,217,0.15);
+}
+.field textarea {
+    min-height: 220px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    resize: vertical;
+    line-height: 1.5;
+}
+.field input[disabled] {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #4b5563;
+    margin-top: 8px;
+}
+.checkbox-row input { width: auto; margin: 0; }
+#toasts {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 200;
+    pointer-events: none;
+}
+.toast {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid #0052d9;
+    min-width: 240px;
+    max-width: 380px;
+    font-size: 14px;
+    animation: slide-in 0.2s ease-out;
+    pointer-events: auto;
+}
+.toast.success { border-left-color: #16a34a; }
+.toast.error { border-left-color: #dc2626; }
+@keyframes slide-in {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+[hidden] { display: none !important; }
+@media (max-width: 640px) {
+    main { padding: 0 12px; }
+    .card { padding: 16px; }
+    .header-inner { flex-wrap: wrap; }
+}
+</style>
 </head>
 <body>
-    <div class="card">
-        <h2>EdgeOne Makers Text2KV 控制台</h2>
-        <label>Admin Token:</label>
-        <input type="password" id="token" placeholder="输入你在 EdgeOne Makers 设置的 ADMIN_TOKEN">
-        <button onclick="loadList()">加载数据列表</button>
+<header>
+    <div class="header-inner">
+        <h1 class="header-title">EdgeOne Makers Text2KV</h1>
+        <span class="header-subtitle">Admin Console</span>
+        <div class="header-spacer"></div>
+        <span id="status" class="header-status">未登录</span>
+        <button id="logout-btn" class="header-btn" onclick="logout()" hidden>退出</button>
+    </div>
+</header>
+
+<main>
+    <div id="login-view" class="card login-card">
+        <h2>登录</h2>
+        <p>输入你在 EdgeOne Makers 环境变量中配置的 <code>ADMIN_TOKEN</code>。</p>
+        <div class="field" style="margin-top:16px;">
+            <label for="login-token">Admin Token</label>
+            <input type="password" id="login-token" placeholder="粘贴你的 Admin Token" autocomplete="off">
+        </div>
+        <label class="checkbox-row">
+            <input type="checkbox" id="remember">
+            记住我（Token 将保存至本浏览器 localStorage）
+        </label>
+        <button id="login-btn" class="btn btn-primary" style="margin-top:16px;" onclick="login()">登录</button>
     </div>
 
-    <div class="card">
-        <h3>数据控制台输出</h3>
-        <pre id="output">等待操作...</pre>
+    <div id="admin-view" hidden>
+        <div class="card">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openCreate()">＋ 新建 Key</button>
+                <input type="search" id="search" placeholder="🔍 过滤 key..." oninput="renderList()">
+                <span class="stats" id="stats">加载中…</span>
+                <button class="btn" onclick="loadList()">🔄 刷新</button>
+            </div>
+            <div id="list-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50%;">Key</th>
+                            <th style="width:20%;">Read Token</th>
+                            <th style="width:30%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list-body"></tbody>
+                </table>
+            </div>
+            <div id="empty" hidden class="empty">
+                <h3>还没有 Key</h3>
+                <p>点击「＋ 新建 Key」创建第一条记录</p>
+            </div>
+        </div>
     </div>
+</main>
 
-    <script>
-        async function loadList() {
-            const token = document.getElementById('token').value.trim();
-            const output = document.getElementById('output');
-            if (!token) return alert('请输入 Token！');
+<div id="edit-modal" class="modal-backdrop" hidden>
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="edit-title">新建 Key</h3>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <label for="edit-key">Key</label>
+                <input type="text" id="edit-key" placeholder="my-key" maxlength="200" autocomplete="off">
+                <div class="hint">仅允许字母、数字、_ - . : / ，最长 200 字符；不允许以 _meta: 开头。</div>
+            </div>
+            <div class="field">
+                <label for="edit-content">Content <span id="content-size" style="font-weight:normal;color:#6b7280;font-size:13px;"></span></label>
+                <textarea id="edit-content" placeholder="输入文本内容..."></textarea>
+            </div>
+            <div class="field">
+                <label for="edit-token">Read Token <span style="font-weight:normal;color:#6b7280;">(可选)</span></label>
+                <input type="text" id="edit-token" placeholder="留空则公开可读" autocomplete="off">
+                <div class="hint">设置后，读取此 key 需要提供匹配的 readToken。</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeEdit()">取消</button>
+            <button id="edit-save-btn" class="btn btn-primary" onclick="saveKey()">保存</button>
+        </div>
+    </div>
+</div>
 
-            output.innerText = '正在请求...';
-            try {
-                const res = await fetch(`/api/list?token=${encodeURIComponent(token)}`);
-                const data = await res.json();
-                output.innerText = JSON.stringify(data, null, 2);
-            } catch (e) {
-                output.innerText = '请求失败: ' + e.message;
-            }
+<div id="delete-modal" class="modal-backdrop" hidden>
+    <div class="modal" style="max-width:440px;">
+        <div class="modal-header">
+            <h3>确认删除</h3>
+        </div>
+        <div class="modal-body">
+            <p>确定要删除以下 key 吗？此操作不可撤销：</p>
+            <pre id="delete-key" style="background:#f3f4f6;padding:10px;border-radius:4px;font-family:ui-monospace,monospace;font-size:13px;word-break:break-all;margin:8px 0;"></pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeDelete()">取消</button>
+            <button id="delete-confirm-btn" class="btn btn-danger" onclick="confirmDelete()">删除</button>
+        </div>
+    </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ============ State ============
+const STORAGE_KEY = 'text2kv_admin_token';
+const KEY_REGEX = /^[\w.\-:/]{1,200}$/;
+const state = {
+    token: null,
+    keys: [],
+    editing: null,   // null | 'new' | {key, readToken}
+    deleting: null,
+};
+
+// ============ DOM helpers ============
+const $ = (id) => document.getElementById(id);
+
+// ============ Toasts ============
+function toast(msg, type = 'info') {
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    $('toasts').appendChild(el);
+    setTimeout(() => {
+        el.style.transition = 'opacity 0.3s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+// ============ API client ============
+async function api(method, path, body) {
+    if (!state.token) throw new Error('未登录');
+    const opts = {
+        method: method,
+        headers: {
+            'Authorization': 'Bearer ' + state.token,
+        },
+    };
+    if (body) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+    }
+    let res;
+    try {
+        res = await fetch(path, opts);
+    } catch (e) {
+        throw new Error('网络错误，请检查连接');
+    }
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+    return data;
+}
+
+// ============ Utils ============
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+}
+
+// ============ Auth ============
+async function login() {
+    const t = $('login-token').value.trim();
+    if (!t) { toast('请输入 Admin Token', 'error'); return; }
+    const btn = $('login-btn');
+    btn.disabled = true;
+    btn.textContent = '登录中…';
+    state.token = t;
+    try {
+        const data = await api('GET', '/api/list');
+        state.keys = Array.isArray(data) ? data : [];
+        if ($('remember').checked) localStorage.setItem(STORAGE_KEY, t);
+        else localStorage.removeItem(STORAGE_KEY);
+        enterAdmin();
+    } catch (e) {
+        state.token = null;
+        toast('登录失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '登录';
+    }
+}
+
+async function tryAutoLogin() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    state.token = saved;
+    $('login-token').value = saved;
+    $('remember').checked = true;
+    try {
+        const data = await api('GET', '/api/list');
+        state.keys = Array.isArray(data) ? data : [];
+        enterAdmin();
+    } catch (e) {
+        state.token = null;
+        localStorage.removeItem(STORAGE_KEY);
+        toast('自动登录失败: ' + e.message, 'error');
+    }
+}
+
+function logout() {
+    state.token = null;
+    state.keys = [];
+    localStorage.removeItem(STORAGE_KEY);
+    $('login-token').value = '';
+    $('remember').checked = false;
+    $('status').textContent = '未登录';
+    $('logout-btn').hidden = true;
+    $('admin-view').hidden = true;
+    $('login-view').hidden = false;
+}
+
+function enterAdmin() {
+    $('status').textContent = '已登录';
+    $('logout-btn').hidden = false;
+    $('login-view').hidden = true;
+    $('admin-view').hidden = false;
+    renderList();
+}
+
+// ============ List ============
+async function loadList() {
+    if (!state.token) return;
+    $('stats').textContent = '加载中…';
+    try {
+        const data = await api('GET', '/api/list');
+        state.keys = Array.isArray(data) ? data : [];
+        renderList();
+    } catch (e) {
+        $('stats').textContent = '加载失败';
+        toast('加载列表失败: ' + e.message, 'error');
+    }
+}
+
+function renderList() {
+    const q = ($('search').value || '').trim().toLowerCase();
+    const filtered = state.keys.filter(function(k) { return !q || k.key.toLowerCase().includes(q); });
+    $('stats').textContent = filtered.length + ' / ' + state.keys.length + ' 条';
+    if (state.keys.length === 0) {
+        $('list-container').hidden = true;
+        $('empty').hidden = false;
+        $('list-body').innerHTML = '';
+        return;
+    }
+    $('list-container').hidden = false;
+    $('empty').hidden = true;
+    if (filtered.length === 0) {
+        $('list-body').innerHTML = '<tr><td colspan="3" style="text-align:center;color:#6b7280;padding:24px;">没有匹配的 Key</td></tr>';
+        return;
+    }
+    $('list-body').innerHTML = filtered.map(function(k) {
+        const tokenBadge = k.readToken
+            ? '<span class="badge badge-locked">🔒 需 Token</span>'
+            : '<span class="badge badge-public">🌐 公开</span>';
+        return '<tr data-key="' + escapeHtml(k.key) + '">' +
+            '<td class="key">' + escapeHtml(k.key) + '</td>' +
+            '<td>' + tokenBadge + '</td>' +
+            '<td class="actions">' +
+                '<button class="btn btn-sm" data-action="copy">复制</button>' +
+                '<button class="btn btn-sm btn-primary" data-action="edit">编辑</button>' +
+                '<button class="btn btn-sm btn-danger" data-action="delete">删除</button>' +
+            '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+// ============ Create / Edit ============
+function openCreate() {
+    state.editing = 'new';
+    $('edit-title').textContent = '新建 Key';
+    $('edit-key').value = '';
+    $('edit-key').disabled = false;
+    $('edit-content').value = '';
+    $('edit-token').value = '';
+    updateContentSize();
+    $('edit-modal').hidden = false;
+    setTimeout(function() { $('edit-key').focus(); }, 0);
+}
+
+async function openEdit(key) {
+    state.editing = { key: key, readToken: null };
+    $('edit-title').textContent = '编辑 Key';
+    $('edit-key').value = key;
+    $('edit-key').disabled = true;
+    $('edit-content').value = '加载中…';
+    $('edit-token').value = '';
+    updateContentSize();
+    $('edit-modal').hidden = false;
+    try {
+        const found = state.keys.find(function(k) { return k.key === key; });
+        const readToken = (found && found.readToken) || '';
+        state.editing.readToken = readToken;
+        const url = '/api/get?key=' + encodeURIComponent(key) + '&readToken=' + encodeURIComponent(readToken);
+        const data = await api('GET', url);
+        $('edit-content').value = (data.content != null) ? data.content : '';
+        $('edit-token').value = readToken;
+        updateContentSize();
+    } catch (e) {
+        $('edit-content').value = '';
+        toast('加载内容失败: ' + e.message, 'error');
+    }
+}
+
+function closeEdit() {
+    state.editing = null;
+    $('edit-modal').hidden = true;
+}
+
+async function saveKey() {
+    const key = $('edit-key').value.trim();
+    const content = $('edit-content').value;
+    const readToken = $('edit-token').value.trim();
+    if (!key) { toast('Key 不能为空', 'error'); return; }
+    if (key.startsWith('_meta:')) { toast('Key 不允许使用 _meta: 前缀', 'error'); return; }
+    if (!KEY_REGEX.test(key)) {
+        toast('Key 格式不合法：仅允许字母、数字、_ - . : / ，最长 200 字符', 'error');
+        return;
+    }
+    const btn = $('edit-save-btn');
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+    try {
+        await api('POST', '/api/save', { key: key, content: content, readToken: readToken });
+        toast('保存成功', 'success');
+        closeEdit();
+        loadList();
+    } catch (e) {
+        toast('保存失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '保存';
+    }
+}
+
+// ============ Delete ============
+function openDelete(key) {
+    state.deleting = key;
+    $('delete-key').textContent = key;
+    $('delete-modal').hidden = false;
+}
+
+function closeDelete() {
+    state.deleting = null;
+    $('delete-modal').hidden = true;
+}
+
+async function confirmDelete() {
+    const key = state.deleting;
+    if (!key) return;
+    const btn = $('delete-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = '删除中…';
+    try {
+        await api('POST', '/api/delete', { key: key });
+        toast('已删除: ' + key, 'success');
+        closeDelete();
+        loadList();
+    } catch (e) {
+        toast('删除失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '删除';
+    }
+}
+
+// ============ Copy ============
+async function copyKey(key) {
+    try {
+        await navigator.clipboard.writeText(key);
+        toast('已复制到剪贴板', 'success');
+    } catch (e) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = key;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            toast('已复制', 'success');
+        } catch (e2) {
+            toast('复制失败', 'error');
         }
-    </script>
+    }
+}
+
+// ============ Content size indicator ============
+function updateContentSize() {
+    const len = $('edit-content').value.length;
+    $('content-size').textContent = len > 0 ? '(' + len + ' 字符)' : '';
+}
+
+// ============ Event delegation ============
+function initEvents() {
+    // List row actions
+    $('list-body').addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const tr = btn.closest('tr');
+        if (!tr || !tr.dataset.key) return;
+        const key = tr.dataset.key;
+        const action = btn.dataset.action;
+        if (action === 'copy') copyKey(key);
+        else if (action === 'edit') openEdit(key);
+        else if (action === 'delete') openDelete(key);
+    });
+    // Close modal on backdrop click
+    ['edit-modal', 'delete-modal'].forEach(function(id) {
+        $(id).addEventListener('click', function(e) {
+            if (e.target === $(id)) {
+                $(id).hidden = true;
+                if (id === 'edit-modal') state.editing = null;
+                else state.deleting = null;
+            }
+        });
+    });
+    // ESC closes modals
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('edit-modal').hidden = true;
+            $('delete-modal').hidden = true;
+            state.editing = null;
+            state.deleting = null;
+        }
+    });
+    // Enter in login token triggers login
+    $('login-token').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') login();
+    });
+    // Content size indicator
+    $('edit-content').addEventListener('input', updateContentSize);
+}
+
+// ============ Init ============
+document.addEventListener('DOMContentLoaded', function() {
+    initEvents();
+    tryAutoLogin();
+});
+</script>
 </body>
 </html>
