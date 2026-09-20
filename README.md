@@ -1,20 +1,30 @@
 # edgeone-text2kv
 
-一个部署在 [EdgeOne Makers](https://cloud.tencent.com/document/product/1552/127365) 上的轻量 KV 存储工具，后端使用 [Upstash Redis](https://upstash.com/) REST API。
+部署在 [EdgeOne Makers](https://cloud.tencent.com/document/product/1552/127365) 上的轻量 KV 存储工具，后端使用 [Upstash Redis](https://upstash.com/) REST API，前端提供完整的 Web 管理界面。
+
+## 功能
+
+- **Web 管理界面** — 登录、创建、编辑、删除、搜索 key-value
+- **深色模式** — 跟随系统偏好，支持手动切换，自动持久化
+- **访问链接** — 一键复制公开访问 URL，浏览器直接显示纯文本内容
+- **内容加密** — 为 key 设置 readToken，访问时自动附加到链接
+- **搜索过滤** — 按 key 或 content 实时搜索
+- **复制功能** — 复制 key 名称或完整访问链接
+- **字符统计** — 显示 content 字符数
 
 ## 项目结构
 
 ```
 edgeone-text2kv/
-├── edge-functions/          # EdgeOne Makers Edge Functions
+├── edge-functions/              # EdgeOne Makers Edge Functions
 │   └── api/
-│       ├── list.js         # GET  /api/list      — 列出所有 key（需 admin token）
-│       ├── save.js         # POST /api/save      — 保存 key-value（需 admin token）
-│       ├── delete.js       # POST /api/delete    — 删除 key（需 admin token）
-│       └── get.js          # GET  /api/get       — 公开读取（需 readToken）
+│       ├── list.js             # GET  /api/list    — 列出所有 key（需 admin token）
+│       ├── save.js             # POST /api/save    — 保存 key-value（需 admin token）
+│       ├── delete.js           # POST /api/delete  — 删除 key（需 admin token）
+│       └── get.js              # GET  /api/get     — 公开读取（返回纯文本）
 ├── public/
-│   └── index.html          # 管理界面（静态资源，由平台直接路由）
-├── edgeone.json            # 构建配置
+│   └── index.html              # 管理界面（单文件，无外部依赖）
+├── edgeone.json                # 构建配置
 └── README.md
 ```
 
@@ -69,7 +79,46 @@ edgeone-text2kv/
 ```
 
 ### GET /api/get?key=xxx&readToken=yyy
-公开读取接口。如果 key 设置了 readToken，需要提供；否则无需 token。
+公开读取接口。返回纯文本内容（`Content-Type: text/plain; charset=utf-8`），浏览器直接显示。
+
+- 如果 key 未设置 readToken：直接访问 `/api/get?key=my-key`
+- 如果 key 设置了 readToken：需要提供 `&readToken=yyy`
+- 错误时返回 JSON（如 `{ "error": "Key 不存在" }`）
+
+## 管理界面功能
+
+### 登录
+- 首次使用需设置 Admin Token（浏览器本地存储）
+- 后续自动填充，无需重复输入
+
+### 创建 Key
+- 点击「新增」按钮，弹出表单
+- 填写 key 名称和 content 内容
+- 可选设置 readToken（加密读取权限）
+
+### 编辑 Key
+- 点击「编辑」按钮，弹出表单
+- 修改 content 或 readToken
+- 实时显示字符数统计
+
+### 删除 Key
+- 点击「删除」按钮
+- 确认弹窗后删除
+
+### 搜索
+- 在搜索框输入关键词
+- 按 key 或 content 实时过滤
+
+### 复制
+- 点击「复制」复制 key 名称
+- 点击「链接」复制完整访问 URL（含 readToken 时自动附加）
+- 访问链接打开后直接显示纯文本内容
+
+### 深色模式
+- 默认跟随系统偏好
+- 右上角切换按钮手动切换
+- 自动保存到浏览器本地存储
+- 适配 Edge、Safari 等浏览器
 
 ## 迁移说明
 
