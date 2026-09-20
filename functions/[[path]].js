@@ -1,31 +1,35 @@
 export default {
     async fetch(request, env) {
         try {
-            // 1. 获取环境变量（安全兜底：去掉首尾空格）
+            // 1. 获取环境变量
             const adminToken = (env.ADMIN_TOKEN || '').trim();
             const upstashUrl = (env.UPSTASH_REDIS_REST_URL || '').trim();
             const upstashToken = (env.UPSTASH_REDIS_REST_TOKEN || '').trim();
 
             const url = new URL(request.url);
             
-            // 2. 增强容错：多重解码与路径清洗
-            let rawPath = url.pathname;
-            try { rawPath = decodeURIComponent(rawPath); } catch (e) {}
+            // 解码并标准化路径
+            let path = url.pathname;
+            try { path = decodeURIComponent(path); } catch (e) {}
             
-            // 将路径转为小写并标准化，允许匹配 /api/list, /api/list/, /my-project/api/list 等情况
-            const cleanPath = rawPath.toLowerCase().replace(/\/+/g, '/').replace(/\/$/, '');
+            // 统一转小写，去除连续斜杠，去除末尾斜杠
+            const cleanPath = path.toLowerCase().replace(/\/+/g, '/').replace(/\/$/, '');
             const queryToken = (url.searchParams.get('token') || '').trim();
 
-            // 3. 增强路由匹配逻辑 (只要路径包含 api/ 关键节点即认定为 API 请求)
-            const isApi = cleanPath.includes('/api/') || cleanPath.startsWith('/api') || cleanPath.startsWith('api');
+            // 2. 更加稳健的 API 路由判断（只要路径以 api/xxx 结尾或包含 api/xxx）
+            const isListApi = cleanPath.endsWith('/api/list') || cleanPath.endsWith('/api/list/');
+            const isSaveApi = cleanPath.endsWith('/api/save') || cleanPath.endsWith('/api/save/');
+            const isDeleteApi = cleanPath.endsWith('/api/delete') || cleanPath.endsWith('/api/delete/');
+            
+            const isApi = isListApi || isSaveApi || isDeleteApi || cleanPath.includes('/api/');
 
             if (isApi) {
-                // 环境变量未配置时的容错提示
+                // 环境变量配置检查
                 if (!adminToken) {
                     return jsonRes({ error: '服务端配置缺失：未在 EdgeOne Pages 设置 ADMIN_TOKEN 环境变量' }, 500);
                 }
                 
-                // 鉴权严格校验
+                // 鉴权校验
                 if (!queryToken || queryToken !== adminToken) {
                     return jsonRes({ error: '鉴权失败：Token 无效或不匹配' }, 403);
                 }
@@ -34,8 +38,8 @@ export default {
                     return jsonRes({ error: '服务端配置缺失：未配置 Upstash Redis 环境变量' }, 500);
                 }
 
-                // 3.1 获取列表接口 (适配 /api/list)
-                if (cleanPath.endsWith('/api/list') || cleanPath.endsWith('api/list')) {
+                // 3.1 获取列表接口
+                if (isListApi) {
                     const keys = await upstashCommand(upstashUrl, upstashToken, 'KEYS', '*');
                     const cleanKeys = (keys || []).filter(k => !k.startsWith('_meta:'));
 
@@ -51,8 +55,8 @@ export default {
                     return jsonRes(list, 200);
                 }
 
-                // 3.2 保存接口 (适配 /api/save)
-                if (cleanPath.endsWith('/api/save') || cleanPath.endsWith('api/save')) {
+                // 3.2 保存接口
+                if (isSaveApi) {
                     if (request.method !== 'POST') return jsonRes({ error: 'Method Not Allowed' }, 405);
                     
                     let body = {};
@@ -66,8 +70,8 @@ export default {
                     return jsonRes({ success: true }, 200);
                 }
 
-                // 3.3 删除接口 (适配 /api/delete)
-                if (cleanPath.endsWith('/api/delete') || cleanPath.endsWith('api/delete')) {
+                // 3.3 删除接口
+                if (isDeleteApi) {
                     if (request.method !== 'POST') return jsonRes({ error: 'Method Not Allowed' }, 405);
                     
                     let body = {};
@@ -81,7 +85,7 @@ export default {
                     return jsonRes({ success: true }, 200);
                 }
 
-                return jsonRes({ error: '未找到对应 API 路由' }, 404);
+                return jsonRes({ error: `未找到对应 API 路由，当前匹配路径: ${cleanPath}` }, 404);
             }
 
             // 4. 静态资源回退机制
@@ -118,7 +122,7 @@ function jsonRes(data, status = 200) {
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
             'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Access-Control-Allow-Origin': '*' // 解决跨域访问容错
+            'Access-Control-Allow-Origin': '*'
         }
     });
 }
