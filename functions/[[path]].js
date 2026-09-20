@@ -14,7 +14,7 @@ export async function onRequest(context) {
 
         const url = new URL(request.url);
 
-        // 2. 路径清洗与统一处理
+        // 2. 路径清洗与标准化
         let rawPath = url.pathname;
         try { rawPath = decodeURIComponent(rawPath); } catch (e) {}
 
@@ -39,21 +39,28 @@ export async function onRequest(context) {
                 return jsonRes({ error: '服务端配置缺失：未配置 Upstash Redis 环境变量' }, 500);
             }
 
-            // 路由划分
+            // --- 路由匹配 ---
+
             // 3.1 获取列表接口 (/api/list)
             if (cleanPath.endsWith('/api/list')) {
-                const keys = await upstashCommand(upstashUrl, upstashToken, 'KEYS', '*');
-                const cleanKeys = (keys || []).filter(k => !k.startsWith('_meta:'));
+                const keys = await upstashRest(upstashUrl, upstashToken, ["KEYS", "*"]);
+                const cleanKeys = (keys || []).filter(k => typeof k === 'string' && !k.startsWith('_meta:'));
 
-                const list = [];
-                for (const key of cleanKeys) {
-                    const meta = await upstashCommand(upstashUrl, upstashToken, 'GET', `_meta:${key}`);
+                // 使用 Promise.all 并行获取所有 meta，防止串行请求导致 EdgeOne 函数超时
+                const list = await Promise.all(cleanKeys.map(async (key) => {
                     let readToken = '';
-                    if (meta) {
-                        try { readToken = JSON.parse(meta).readToken || ''; } catch (e) {}
+                    try {
+                        const meta = await upstashRest(upstashUrl, upstashToken, ["GET", `_meta:${key}`]);
+                        if (meta) {
+                            const parsed = typeof meta === 'string' ? JSON.parse(meta) : meta;
+                            readToken = parsed.readToken || '';
+                        }
+                    } catch (e) {
+                        // 防错：单个 meta 读取失败不影响整个列表
                     }
-                    list.push({ key, readToken });
-                }
+                    return { key, readToken };
+                }));
+
                 return jsonRes(list, 200);
             }
 
@@ -67,8 +74,12 @@ export async function onRequest(context) {
                 const { key, content, readToken } = body;
                 if (!key) return jsonRes({ error: 'Key 不能为空' }, 400);
 
-                await upstashCommand(upstashUrl, upstashToken, 'SET', key, content || '');
-                await upstashCommand(upstashUrl, upstashToken, 'SET', `_meta:${key}`, JSON.stringify({ readToken: readToken || '' }));
+                // 使用并发写入，保证速度
+                await Promise.all([
+                    upstashRest(upstashUrl, upstashToken, ["SET", key, content || '']),
+                    upstashRest(upstashUrl, upstashToken, ["SET", `_meta:${key}`, JSON.stringify({ readToken: readToken || '' })])
+                ]);
+
                 return jsonRes({ success: true }, 200);
             }
 
@@ -82,15 +93,18 @@ export async function onRequest(context) {
                 const { key } = body;
                 if (!key) return jsonRes({ error: 'Key 不能为空' }, 400);
 
-                await upstashCommand(upstashUrl, upstashToken, 'DEL', key);
-                await upstashCommand(upstashUrl, upstashToken, 'DEL', `_meta:${key}`);
+                await Promise.all([
+                    upstashRest(upstashUrl, upstashToken, ["DEL", key]),
+                    upstashRest(upstashUrl, upstashToken, ["DEL", `_meta:${key}`])
+                ]);
+
                 return jsonRes({ success: true }, 200);
             }
 
             return jsonRes({ error: '未找到对应 API 路由' }, 404);
         }
 
-        // 4. 非 API 请求：静态资源放行机制 (交由 public/ 托管)
+        // 4. 非 API 请求：静态资源放行机制 (静态资源托管)
         if (env.ASSETS) {
             return env.ASSETS.fetch(request);
         }
@@ -101,21 +115,31 @@ export async function onRequest(context) {
     }
 }
 
-// 辅助函数：访问 Upstash Redis API
-async function upstashCommand(upstashUrl, upstashToken, command, ...args) {
-    const endpoint = `${upstashUrl.replace(/\/$/, '')}/${command}/${args.map(encodeURIComponent).join('/')}`;
+/**
+ * 改进版的 Upstash REST API 访问函数
+ * 改用 POST Body 传参，完美避开 URL 特殊字符编码问题
+ */
+async function upstashRest(baseUrl, token, commandArray) {
+    const endpoint = `${baseUrl.replace(/\/$/, '')}`;
     const res = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${upstashToken}` }
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(commandArray)
     });
+
     if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Upstash 通信失败 [${res.status}]: ${errText}`);
     }
+
     const data = await res.json();
     return data.result;
 }
 
-// 辅助函数：统一 JSON 格式化响应
+// 辅助函数：统一 JSON 响应格式
 function jsonRes(data, status = 200) {
     return new Response(JSON.stringify(data), {
         status,
