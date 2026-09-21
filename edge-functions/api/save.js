@@ -1,5 +1,6 @@
 // EdgeOne Makers Edge Function — POST /api/save
-// 保存 key-value 及可选 readToken（需 admin token）
+// 保存 key-value（需 admin token）
+// KV 存储格式：filename:readToken → content（无 readToken 时只用 filename）
 // 自包含：Edge Functions 目录内所有 .js 文件均视为路由，无法引入共享模块
 
 // ====== Helpers ======
@@ -27,13 +28,18 @@ const auth = (req, url) => {
   return h || (url.searchParams.get('token') || '').trim();
 };
 
-const validate = (k) => {
-  if (!k || typeof k !== 'string') return 'Key 不能为空';
-  if (k.startsWith('_meta:')) return 'Key 不允许使用 _meta: 前缀';
-  if (!/^[\w.\-:/]{1,200}$/.test(k))
-    return 'Key 仅允许字母、数字、_ - . : /，最长 200 字符';
+// 校验 filename：仅允许字母、数字、连字符，最长 200
+const validate = (filename) => {
+  if (!filename || typeof filename !== 'string') return 'Key 不能为空';
+  if (/^_meta:/.test(filename)) return 'Key 不允许使用 _meta: 前缀';
+  if (!/^[a-zA-Z0-9.-]{1,200}$/.test(filename))
+    return 'Key 仅允许字母、数字、连字符、点，最长 200 字符';
   return null;
 };
+
+// 拼接 KV 存储 key：filename:readToken（无 readToken 时只用 filename）
+const buildFullKey = (filename, readToken) =>
+  readToken ? filename + ':' + readToken : filename;
 
 async function pipe(url, token, cmds) {
   const ep = `${url.replace(/\/$/, '')}/pipeline`;
@@ -74,9 +80,9 @@ export async function onRequest(context) {
     const err = validate(key);
     if (err) return json({ error: err }, 400);
 
+    const fullKey = buildFullKey(key, readToken || '');
     await pipe(u, t, [
-      ['SET', key, content || ''],
-      ['SET', `_meta:${key}`, JSON.stringify({ readToken: readToken || '' })],
+      ['SET', fullKey, content || ''],
     ]);
     return json({ success: true }, 200);
   } catch (err) {

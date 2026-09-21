@@ -446,8 +446,8 @@ td.actions .btn-sm { margin-left: 6px; }
         <div class="modal-body">
             <div class="field">
                 <label for="edit-key">Key</label>
-                <input type="text" id="edit-key" placeholder="my-key" maxlength="200" autocomplete="off">
-                <div class="hint">仅允许字母、数字、_ - . : / ，最长 200 字符；不允许以 _meta: 开头。</div>
+                <input type="text" id="edit-key" placeholder="my-key" maxlength="200" autocomplete="off" pattern="[a-zA-Z0-9.-]{1,200}">
+                <div class="hint">仅允许字母、数字、连字符、点，最长 200 字符。</div>
             </div>
             <div class="field">
                 <label for="edit-content">Content <span id="content-size" style="font-weight:normal;color:var(--text-muted);font-size:13px;"></span></label>
@@ -528,7 +528,7 @@ function toggleTheme() {
 
 // ============ State ============
 const STORAGE_KEY = 'text2kv_admin_token';
-const KEY_REGEX = /^[\w.\-:/]{1,200}$/;
+const KEY_REGEX = /^[a-zA-Z0-9.-]{1,200}$/;
 const state = {
     token: null,
     keys: [],
@@ -740,9 +740,8 @@ async function saveKey() {
     const content = $('edit-content').value;
     const readToken = $('edit-token').value.trim();
     if (!key) { toast('Key 不能为空', 'error'); return; }
-    if (key.startsWith('_meta:')) { toast('Key 不允许使用 _meta: 前缀', 'error'); return; }
     if (!KEY_REGEX.test(key)) {
-        toast('Key 格式不合法：仅允许字母、数字、_ - . : / ，最长 200 字符', 'error');
+        toast('Key 格式不合法：仅允许字母、数字、连字符、点，最长 200 字符', 'error');
         return;
     }
     const btn = $('edit-save-btn');
@@ -780,7 +779,9 @@ async function confirmDelete() {
     btn.disabled = true;
     btn.textContent = '删除中…';
     try {
-        await api('POST', '/api/delete', { key: key });
+        const found = state.keys.find(function(k) { return k.key === key; });
+        const readToken = (found && found.readToken) || '';
+        await api('POST', '/api/delete', { key: key, readToken: readToken });
         toast('已删除: ' + key, 'success');
         closeDelete();
         loadList();

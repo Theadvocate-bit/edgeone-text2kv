@@ -53,6 +53,14 @@ edgeone-text2kv/
 
 ## API 说明
 
+### Key 命名与存储格式
+
+- **Key 合法字符**：仅允许**字母、数字、连字符、点**，最长 200 字符。不允许 `_`、`:`、`/`、空格、汉字、其他特殊字符，也不允许 `_meta:` 前缀。
+- **KV 存储格式**：单条 Redis 记录，`key = filename:readToken`（无 readToken 时只用 `filename`），`value = content` 原文。不再使用 `_meta:` 双写。
+- **示例**：
+  - `filename = "my-key"`，无 readToken → KV: `my-key` → `"hello"`
+  - `filename = "report.v2"`，readToken = `"secret"` → KV: `report.v2:secret` → `"weekly report"`
+
 ### GET /api/list?token=xxx
 列出所有 key 及其 readToken。需要 admin token。
 
@@ -69,12 +77,13 @@ edgeone-text2kv/
 ```
 
 ### POST /api/delete
-删除 key。需要 admin token。
+删除 key。需要 admin token。请求体中若该 key 设有 readToken，需要同时传入以定位准确的 KV 记录。
 
 请求体：
 ```json
 {
-  "key": "my-key"
+  "key": "my-key",
+  "readToken": "optional-read-token"
 }
 ```
 

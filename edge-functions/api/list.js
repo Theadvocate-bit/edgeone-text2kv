@@ -1,5 +1,6 @@
 // EdgeOne Makers Edge Function — GET /api/list
 // 列出所有 key 及其 readToken（需 admin token）
+// KV 存储格式：filename:readToken → content（无 readToken 时只用 filename）
 // 自包含：Edge Functions 目录内所有 .js 文件均视为路由，无法引入共享模块
 
 // ====== Helpers ======
@@ -53,6 +54,13 @@ async function pipe(url, token, cmds) {
   });
 }
 
+// 从完整 KV key 拆分出 filename 与 readToken
+const splitFullKey = (fullKey) => {
+  const idx = fullKey.indexOf(':');
+  if (idx === -1) return { filename: fullKey, readToken: '' };
+  return { filename: fullKey.slice(0, idx), readToken: fullKey.slice(idx + 1) };
+};
+
 // ====== Handler ======
 export async function onRequest(context) {
   const { request, env: e } = context;
@@ -67,14 +75,15 @@ export async function onRequest(context) {
     if (!provided || provided !== a) return json({ error: '鉴权失败：Token 无效或不匹配' }, 403);
 
     const keys = await cmd(u, t, 'KEYS', '*');
+    // 过滤掉旧版 _meta: 遗留记录（若存在）
     const cleanKeys = (keys || []).filter((k) => !k.startsWith('_meta:'));
     if (cleanKeys.length === 0) return json([], 200);
 
-    const metas = await pipe(u, t, cleanKeys.map((k) => ['GET', `_meta:${k}`]));
-    const list = cleanKeys.map((key, i) => {
-      let readToken = '';
-      try { readToken = JSON.parse(metas[i]).readToken || ''; } catch {}
-      return { key, readToken };
+    // 单条 KV 记录里已含 readToken（split 后）与 content（value）
+    const values = await pipe(u, t, cleanKeys.map((k) => ['GET', k]));
+    const list = cleanKeys.map((fullKey, i) => {
+      const { filename, readToken } = splitFullKey(fullKey);
+      return { key: filename, readToken, content: values[i] };
     });
     return json(list, 200);
   } catch (err) {

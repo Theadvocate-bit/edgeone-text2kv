@@ -1,5 +1,6 @@
 // EdgeOne Makers Edge Function — GET /api/get?key=xxx&readToken=yyy
 // 公开读取接口：无需 admin token，通过 readToken 鉴权
+// KV 存储格式：filename:readToken → content（无 readToken 时只用 filename）
 // 自包含：Edge Functions 目录内所有 .js 文件均视为路由，无法引入共享模块
 
 // ====== Helpers ======
@@ -58,23 +59,18 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const key = (url.searchParams.get('key') || '').trim();
     if (!key || key.startsWith('_meta:')) return json({ error: 'Key 无效' }, 400);
+    // key 参数必须与 filename 格式一致；readToken 通过独立参数传递
+    if (!/^[a-zA-Z0-9.-]{1,200}$/.test(key))
+      return json({ error: 'Key 无效：仅允许字母、数字、连字符、点' }, 400);
 
-    const [content, meta] = await pipe(u, t, [
-      ['GET', key],
-      ['GET', `_meta:${key}`],
+    const readToken = (url.searchParams.get('readToken') || '').trim();
+    const fullKey = readToken ? key + ':' + readToken : key;
+
+    const [content] = await pipe(u, t, [
+      ['GET', fullKey],
     ]);
 
     if (content === null || content === undefined) return json({ error: 'Key 不存在' }, 404);
-
-    let requiredToken = '';
-    if (meta) {
-      try { requiredToken = JSON.parse(meta).readToken || ''; } catch {}
-    }
-
-    if (requiredToken) {
-      const provided = (url.searchParams.get('readToken') || '').trim();
-      if (provided !== requiredToken) return json({ error: '需要有效的读取 Token' }, 403);
-    }
 
     // Plain text response — access links show content directly in browser
     return text(content, 200);
