@@ -32,8 +32,8 @@ const auth = (req, url) => {
 const validate = (filename) => {
   if (!filename || typeof filename !== 'string') return 'Key 不能为空';
   if (/^_meta:/.test(filename)) return 'Key 不允许使用 _meta: 前缀';
-  if (!/^[a-zA-Z0-9.-]{1,200}$/.test(filename))
-    return 'Key 仅允许字母、数字、连字符、点，最长 200 字符';
+  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(filename))
+    return 'Key 仅允许字母、数字、连字符、下划线，最长 200 字符';
   return null;
 };
 

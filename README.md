@@ -55,11 +55,11 @@ edgeone-text2kv/
 
 ### Key 命名与存储格式
 
-- **Key 合法字符**：仅允许**字母、数字、连字符、点**，最长 200 字符。不允许 `_`、`:`、`/`、空格、汉字、其他特殊字符，也不允许 `_meta:` 前缀。
+- **Key 合法字符**：仅允许**字母、数字、连字符、下划线**，最长 200 字符。不允许 `.`、`:`、`/`、空格、汉字、其他特殊字符，也不允许 `_meta:` 前缀。
 - **KV 存储格式**：单条 Redis 记录，`key = filename:readToken`（无 readToken 时只用 `filename`），`value = content` 原文。不再使用 `_meta:` 双写。
 - **示例**：
   - `filename = "my-key"`，无 readToken → KV: `my-key` → `"hello"`
-  - `filename = "report.v2"`，readToken = `"secret"` → KV: `report.v2:secret` → `"weekly report"`
+  - `filename = "user_profile"`，readToken = `"secret"` → KV: `user_profile:secret` → `"weekly report"`
 
 ### GET /api/list?token=xxx
 列出所有 key 及其 readToken。需要 admin token。

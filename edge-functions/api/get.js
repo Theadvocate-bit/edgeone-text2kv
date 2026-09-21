@@ -60,8 +60,8 @@ export async function onRequest(context) {
     const key = (url.searchParams.get('key') || '').trim();
     if (!key || key.startsWith('_meta:')) return json({ error: 'Key 无效' }, 400);
     // key 参数必须与 filename 格式一致；readToken 通过独立参数传递
-    if (!/^[a-zA-Z0-9.-]{1,200}$/.test(key))
-      return json({ error: 'Key 无效：仅允许字母、数字、连字符、点' }, 400);
+    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(key))
+      return json({ error: 'Key 无效：仅允许字母、数字、连字符、下划线' }, 400);
 
     const readToken = (url.searchParams.get('readToken') || '').trim();
     const fullKey = readToken ? key + ':' + readToken : key;
